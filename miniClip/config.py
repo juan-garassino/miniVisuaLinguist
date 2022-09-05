@@ -1,11 +1,14 @@
-from torch import device
+from torch import device, cuda
+import os
 
 
 class Configuration:
     dataset_size = "8k"
     debug = False
-    image_path = image_path
-    captions_path = captions_path
+    image_path = f'{os.environ["HOME"]}/code/juan-garassino/miniSeries/miniClip/miniClip/data/images'
+    captions_path = (
+        f'{os.environ["HOME"]}/code/juan-garassino/miniSeries/miniClip/miniClip/data'
+    )
     batch_size = 32
     num_workers = 2
     head_lr = 1e-3
@@ -15,7 +18,7 @@ class Configuration:
     patience = 1
     factor = 0.8
     epochs = 4
-    device = device("cuda" if torch.cuda.is_available() else "cpu")
+    device = device("cuda" if cuda.is_available() else "cpu")
 
     model_name = "resnet50"
     image_embedding = 2048

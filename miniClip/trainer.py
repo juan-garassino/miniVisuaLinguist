@@ -7,11 +7,26 @@ from miniClip.utils import AvgMeter, get_lr
 
 import torch
 from tqdm.autonotebook import tqdm
+import csv
 
 
 def make_train_valid_dfs():
-    dataframe = pd.read_csv(f"{Configuration.captions_path}/captions.csv")
-    max_id = dataframe["id"].max() + 1 if not Configuration.debug else 100
+
+    with open(f"{Configuration.captions_path}/captions.txt", "r") as in_file:
+        stripped = (line.strip() for line in in_file)
+        lines = (line.split(",") for line in stripped if line)
+        with open(f"{Configuration.captions_path}/captions.csv", "w") as out_file:
+            writer = csv.writer(out_file)
+            writer.writerow(("image", "caption"))
+            writer.writerows(lines)
+
+    dataframe = pd.read_csv(
+        f"{Configuration.captions_path}/captions.csv", on_bad_lines="skip"
+    )
+
+    dataframe["id"] = dataframe.index + 1
+
+    max_id = dataframe["image"].count() + 1 if not Configuration.debug else 100
     image_ids = np.arange(0, max_id)
     np.random.seed(42)
     valid_ids = np.random.choice(

@@ -2,7 +2,7 @@ from miniClip.trainer import make_train_valid_dfs, build_loaders
 from miniClip.config import Configuration
 from miniClip.model import CLIPModel
 from miniClip.trainer import train_epoch, valid_epoch
-from miniClip.embedding import get_image_embeddings, find_matches
+from miniClip.matches import get_image_embeddings, find_matches
 
 import itertools
 from transformers import DistilBertTokenizer
@@ -59,13 +59,24 @@ def main():
         lr_scheduler.step(valid_loss.avg)
 
 
-_, valid_df = make_train_valid_dfs()
-model, image_embeddings = get_image_embeddings(valid_df, "best.pt")
+if __name__ == "__main__":
+    try:
+        main()
 
-find_matches(
-    model,
-    image_embeddings,
-    query="dogs on the grass",
-    image_filenames=valid_df["image"].values,
-    n=9,
-)
+        _, valid_df = make_train_valid_dfs()
+        model, image_embeddings = get_image_embeddings(valid_df, "best.pt")
+
+        query = "dogs on the grass"
+        find_matches(
+            model,
+            image_embeddings,
+            query=query,
+            image_filenames=valid_df["image"].values,
+            n=9,
+        )
+    except:
+        import ipdb, traceback, sys
+
+        extype, value, tb = sys.exc_info()
+        traceback.print_exc()
+        ipdb.post_mortem(tb)

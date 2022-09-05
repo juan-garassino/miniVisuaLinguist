@@ -1,8 +1,38 @@
+from miniClip.config import Configuration
+from miniClip.model import CLIPModel
+from miniClip.trainer import build_loaders
+
+from transformers import DistilBertTokenizer
+import cv2
+import matplotlib.pyplot as plt
+import torch
+from tqdm.autonotebook import tqdm
+
+
+def get_image_embeddings(valid_df, model_path):
+    tokenizer = DistilBertTokenizer.from_pretrained(Configuration.text_tokenizer)
+    valid_loader = build_loaders(valid_df, tokenizer, mode="valid")
+
+    model = CLIPModel().to(Configuration.device)
+    model.load_state_dict(torch.load(model_path, map_location=Configuration.device))
+    model.eval()
+
+    valid_image_embeddings = []
+    with torch.no_grad():
+        for batch in tqdm(valid_loader):
+            image_features = model.image_encoder(
+                batch["image"].to(Configuration.device)
+            )
+            image_embeddings = model.image_projection(image_features)
+            valid_image_embeddings.append(image_embeddings)
+    return model, torch.cat(valid_image_embeddings)
+
+
 def find_matches(model, image_embeddings, query, image_filenames, n=9):
-    tokenizer = DistilBertTokenizer.from_pretrained(CFG.text_tokenizer)
+    tokenizer = DistilBertTokenizer.from_pretrained(Configuration.text_tokenizer)
     encoded_query = tokenizer([query])
     batch = {
-        key: torch.tensor(values).to(CFG.device)
+        key: torch.tensor(values).to(Configuration.device)
         for key, values in encoded_query.items()
     }
     with torch.no_grad():
@@ -20,7 +50,7 @@ def find_matches(model, image_embeddings, query, image_filenames, n=9):
 
     _, axes = plt.subplots(3, 3, figsize=(10, 10))
     for match, ax in zip(matches, axes.flatten()):
-        image = cv2.imread(f"{CFG.image_path}/{match}")
+        image = cv2.imread(f"{Configuration.image_path}/{match}")
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         ax.imshow(image)
         ax.axis("off")
